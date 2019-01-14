@@ -1,0 +1,47 @@
+import uuid
+from node import Node
+from random import randint
+
+#Just a dictionary. As attributes are required, add them to the INIT to make contents clear.
+class Tracker:
+    pass
+
+tracker = Tracker()
+print(tracker)
+
+def random_tree(depth = 3, midrange = 3, variation = 2):
+    def random_name():
+        return uuid.uuid4().hex
+    def get_children():
+        children = midrange + randint(-variation, variation)
+        return children
+    def create_children(node, depth):
+        if depth <= 0:
+            return
+        for child in range(get_children()):
+            new_node = Node(random_name())
+            node.adopt(new_node)
+            create_children(new_node, depth - 1)
+    root = Node(random_name())
+    create_children(root, depth)
+    return root
+
+tree = random_tree()
+
+"""
+#Function to walk down a question tree, or back up the tree if needed.
+def question_walker(node):
+    name = node.name
+    children = node.children
+    parent = node.parent
+    if children:
+        for index, child in enumerate(children):
+            print(str(index + 1) + '. ' + child.name)
+        answer = int(input('Choose child'))
+        next = children[answer - 1]
+        question_walker(next)
+    else:
+        print('End of tree')
+
+question_walker(tree)
+"""

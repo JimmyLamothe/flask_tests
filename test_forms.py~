@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+from flask import Flask, render_template, redirect, url_for
+from flask_wtf import Form
+from wtforms.fields import RadioField, SubmitField
+from question_walker import random_tree, Tracker
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+questions = ['Is it compiled?', 'Does it run on a VM?']
+guesses = ['Python', 'Java', 'C++']
+root = random_tree()
+tracker = Tracker()
+tracker.current_node = root
+
+class YesNoQuestionForm(Form):
+    answer = RadioField('Your answer', choices=[('yes', 'Yes'), ('no', 'No')])
+    submit = SubmitField('Submit')
+
+class MultipleChoiceForm(YesNoQuestionForm):
+    def __init__(self, choice_list):
+        self.answer = RadioField('Your answer', choices = choice_list)
+        
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/question/<int:id>', methods=['GET', 'POST'])
+def question(id):
+    form = YesNoQuestionForm()
+    if form.validate_on_submit():
+        if form.answer.data == 'yes':
+            return redirect(url_for('question', id=id+1))
+        else:
+            return redirect(url_for('question', id=id))
+    return render_template('question.html', question=questions[id], form=form)
+
+@app.route('/question_walker/', methods = ['GET', 'POST'])
+def question_walker():
+    node = tracker.current_node
+    name = node.name
+    children = node.children
+    parent = node.parent
+    new_text = 'Choose a child to follow'
+    if children:
+        choice_list = []
+        for index, child in enumerate(children):
+            choice_list.append((str(index),child.name))
+        #form = MultipleChoiceForm(choice_list)
+        form = YesNoQuestionForm()
+        if form.validate_on_submit():
+            print(form.__dict__)
+            next = children[0] #temp - see if dict contents have real answer
+            tracker.current_node = next
+            return redirect(url_for('question_walker', text = new_text))
+        else:
+            return render_template('question_walker.html', text = new_text, form = form)
+    else:
+        print('End of tree')
+        return render_template('index.html')
+
+@app.route('/guess/<int:id>')
+def guess(id):
+    return render_template('guess.html', guess=guesses[id])
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
